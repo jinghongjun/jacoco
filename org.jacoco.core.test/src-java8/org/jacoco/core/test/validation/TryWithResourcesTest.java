@@ -93,8 +93,10 @@ public class TryWithResourcesTest extends ValidationTestBase {
 		assertLine("extended.close", ICounter.EMPTY);
 		assertLine("extended.catch", ICounter.NOT_COVERED);
 		assertLine("extended.catchBlock", ICounter.NOT_COVERED);
-		// TODO empty with ECJ
-		assertLine("extended.catchBlockEnd", ICounter.FULLY_COVERED);
+		if (isJDKCompiler()) {
+			assertLine("extended.catchBlockEnd",
+					/* empty when ECJ: */ICounter.FULLY_COVERED);
+		}
 		assertLine("extended.after", ICounter.FULLY_COVERED);
 	}
 
@@ -103,20 +105,26 @@ public class TryWithResourcesTest extends ValidationTestBase {
 	 */
 	@Test
 	public void returnInBody() {
+		// without filter next line covered partly:
 		assertLine("returnInBody.try", ICounter.FULLY_COVERED);
 		assertLine("returnInBody.open", ICounter.FULLY_COVERED);
-		// FIXME ECJ
+		// without filter next line has branches:
 		assertLine("returnInBody.close", ICounter.EMPTY);
 		assertLine("returnInBody.return", ICounter.FULLY_COVERED);
 	}
+
+	/*
+	 * Corner cases
+	 */
 
 	/**
 	 * {@link TryWithResources#handwritten()}
 	 */
 	@Test
 	public void handwritten() {
-		// TODO ECJ
-		assertLine("handwritten", ICounter.EMPTY);
+		if (isJDKCompiler()) {
+			assertLine("handwritten", /* partly when ECJ: */ICounter.EMPTY);
+		}
 	}
 
 	/**
@@ -129,11 +137,13 @@ public class TryWithResourcesTest extends ValidationTestBase {
 
 		assertLine("empty.try", ICounter.FULLY_COVERED, 0, 0);
 		assertLine("empty.open", ICounter.FULLY_COVERED);
-		if (java9) {
-			assertLine("empty.close", ICounter.FULLY_COVERED, 0, 0);
-		} else {
-			// TODO ecj
-			assertLine("empty.close", ICounter.PARTLY_COVERED, 2, 2);
+		if (isJDKCompiler()) {
+			// empty when EJC:
+			if (java9) {
+				assertLine("empty.close", ICounter.FULLY_COVERED, 0, 0);
+			} else {
+				assertLine("empty.close", ICounter.PARTLY_COVERED, 2, 2);
+			}
 		}
 	}
 
@@ -145,8 +155,10 @@ public class TryWithResourcesTest extends ValidationTestBase {
 		final boolean java9 = Java9Support.isPatchRequired(
 				TargetLoader.getClassDataAsBytes(TryWithResources.class));
 
-		// TODO ecj
-		assertLine("throwInBody", ICounter.NOT_COVERED, java9 ? 0 : 4, 0);
+		if (isJDKCompiler()) {
+			assertLine("throwInBody", ICounter.NOT_COVERED,
+					/* 6 when ECJ: */ java9 ? 0 : 4, 0);
+		}
 		assertLine("throwInBody.throw", ICounter.NOT_COVERED);
 	}
 

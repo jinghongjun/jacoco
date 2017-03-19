@@ -125,11 +125,12 @@ public class TryWithResources {
 		handwritten();
 	}
 
-	// Corner cases
+	/*
+	 * Corner cases
+	 */
 
 	private static void empty() throws Exception {
 		try ( // $line-empty.try$
-				@SuppressWarnings("unused")
 				Closeable r = new Resource() // $line-empty.open$
 		) {
 		} // $line-empty.close$

@@ -26,7 +26,6 @@ final class TryWithResourcesMatcher {
 	private final AbstractInsnNode start;
 
 	private AbstractInsnNode cursor;
-	private String closeOwner;
 
 	/**
 	 * @return end of a sequence of instructions that closes resources in
@@ -51,9 +50,9 @@ final class TryWithResourcesMatcher {
 		}
 		for (Pattern t : Pattern.values()) {
 			cursor = start.getPrevious();
-			closeOwner = null;
 			vars.clear();
 			labels.clear();
+			owner.clear();
 			if (matches(t)) {
 				return cursor;
 			}
@@ -178,7 +177,14 @@ final class TryWithResourcesMatcher {
 		if (!nextIsEcjClose("r0")) {
 			return false;
 		}
-		// TODO goto only in case, if execution not terminated in the body
+		final AbstractInsnNode c = cursor;
+		next();
+		if (cursor.getOpcode() != Opcodes.GOTO) {
+			cursor = c;
+			return nextIsEcjNoFlowOut();
+		}
+		cursor = c;
+
 		if (!nextIsJump(Opcodes.GOTO, "r0.end")) {
 			return false;
 		}
@@ -195,7 +201,6 @@ final class TryWithResourcesMatcher {
 		AbstractInsnNode n = cursor;
 		while (!nextIsEcjSuppress("last")) {
 			cursor = n;
-			closeOwner = null;
 			i++;
 			final String r = "r" + i;
 			if (!nextIsLabel("r" + (i - 1) + ".end")) {
@@ -219,6 +224,37 @@ final class TryWithResourcesMatcher {
 		return nextIsVar(Opcodes.ALOAD, PRIMARY_EXC) && nextIs(Opcodes.ATHROW)
 		// && nextIsLabel("r" + i + ".end")
 		;
+	}
+
+	private boolean nextIsEcjNoFlowOut() {
+		int resources = 1;
+		while (true) {
+			AbstractInsnNode c = cursor;
+			next();
+			final int opcode = cursor.getOpcode();
+			if (Opcodes.IRETURN <= opcode && opcode <= Opcodes.ARETURN) {
+				break;
+			}
+			cursor = c;
+			if (!nextIsEcjClose("r" + resources)) {
+				return false;
+			}
+			resources++;
+		}
+		// "primaryExc = t"
+		if (!nextIsVar(Opcodes.ASTORE, PRIMARY_EXC)) {
+			return false;
+		}
+		for (int r = 0; r < resources; r++) {
+			if (!nextIsEcjCloseAndThrow("r" + r)) {
+				return false;
+			}
+			if (!nextIsEcjSuppress("r" + r)) {
+				return false;
+			}
+		}
+		// "throw primaryExc"
+		return nextIsVar(Opcodes.ALOAD, PRIMARY_EXC) && nextIs(Opcodes.ATHROW);
 	}
 
 	private boolean nextIsEcjClose(final String name) {
@@ -258,6 +294,8 @@ final class TryWithResourcesMatcher {
 				&& nextIsLabel(name + ".suppressEnd");
 	}
 
+	private final Map<String, String> owner = new HashMap<String, String>();
+
 	private boolean nextIsClose(String name) {
 		if (!nextIsVar(Opcodes.ALOAD, name)) {
 			return false;
@@ -268,12 +306,12 @@ final class TryWithResourcesMatcher {
 			return false;
 		}
 		final MethodInsnNode m = (MethodInsnNode) cursor;
-		if (closeOwner == null) {
-			closeOwner = m.owner;
-		} else if (!closeOwner.equals(m.owner)) {
+		if (!"close".equals(m.name) || !"()V".equals(m.desc)) {
 			return false;
 		}
-		return "close".equals(m.name) && "()V".equals(m.desc);
+		final String actual = m.owner;
+		final String expected = owner.put(name, actual);
+		return expected == null || actual.equals(expected);
 	}
 
 	private boolean nextIsAddSuppressed(String name) {

@@ -119,6 +119,7 @@ public class TryWithResourcesMatcherTest {
 		}
 		m.visitVarInsn(Opcodes.ALOAD, 4);
 		m.visitInsn(Opcodes.ATHROW);
+
 		m.visitLabel(end);
 
 		assertMatch(3, 43);
@@ -307,13 +308,14 @@ public class TryWithResourcesMatcherTest {
 		}
 		m.visitVarInsn(Opcodes.ALOAD, 4);
 		m.visitInsn(Opcodes.ATHROW);
+
 		m.visitLabel(end);
 
 		assertMatch(3, 18);
 	}
 
 	@Test
-	public void ecj_one_resource() {
+	public void ecj() throws IOException {
 		// primaryExc = null
 		m.visitInsn(Opcodes.ACONST_NULL);
 		m.visitVarInsn(Opcodes.ASTORE, 1);
@@ -321,27 +323,126 @@ public class TryWithResourcesMatcherTest {
 		m.visitInsn(Opcodes.ACONST_NULL);
 		m.visitVarInsn(Opcodes.ASTORE, 2);
 
-		// try { // 1
-		// r1 = open();
-		m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "", "open",
-				"()" + "Ljava/io/Closeable;", false);
-		m.visitVarInsn(Opcodes.ASTORE, 3);
-
-		// try { // 2
-		// body();
-		m.visitInsn(Opcodes.NOP);
-		// } // 2
-
-		Label end = genClose(null, 1);
-		// catch (Throwable t) // 2
-		// primaryExc = t
-		m.visitVarInsn(Opcodes.ASTORE, 1);
-		genCloseAndThrow(1);
-
-		// } // 1
-		// catch (Throwable t) // 1
-		genSuppress();
-
+		final Label l4 = new Label();
+		final Label l7 = new Label();
+		final Label end = new Label();
+		{ // nextIsEcjClose("r0")
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			m.visitJumpInsn(Opcodes.IFNULL, l4);
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun2$Resource", "close",
+					"()V", false);
+		}
+		m.visitJumpInsn(Opcodes.GOTO, l4);
+		{ // nextIsEcjCloseAndThrow("r0")
+			m.visitVarInsn(Opcodes.ASTORE, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			Label l11 = new Label();
+			m.visitJumpInsn(Opcodes.IFNULL, l11);
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun2$Resource", "close",
+					"()V", false);
+			m.visitLabel(l11);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitInsn(Opcodes.ATHROW);
+		}
+		m.visitLabel(l4);
+		{ // nextIsEcjClose("r1")
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			m.visitJumpInsn(Opcodes.IFNULL, l7);
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun2$Resource", "close",
+					"()V", false);
+		}
+		m.visitJumpInsn(Opcodes.GOTO, l7);
+		{ // nextIsEcjSuppress
+			m.visitVarInsn(Opcodes.ASTORE, 2);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			final Label suppressStart = new Label();
+			m.visitJumpInsn(Opcodes.IFNONNULL, suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitVarInsn(Opcodes.ASTORE, 1);
+			final Label suppressEnd = new Label();
+			m.visitJumpInsn(Opcodes.GOTO, suppressEnd);
+			m.visitLabel(suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitJumpInsn(Opcodes.IF_ACMPEQ, suppressEnd);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Throwable",
+					"addSuppressed", "(Ljava/lang/Throwable;)V", false);
+			m.visitLabel(suppressEnd);
+		}
+		{ // nextIsEcjCloseAndThrow("r1")
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			final Label l14 = new Label();
+			m.visitJumpInsn(Opcodes.IFNULL, l14);
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun2$Resource", "close",
+					"()V", false);
+			m.visitLabel(l14);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitInsn(Opcodes.ATHROW);
+		}
+		m.visitLabel(l7);
+		{ // nextIsEcjClose("r2")
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			m.visitJumpInsn(Opcodes.IFNULL, end);
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun2$Resource", "close",
+					"()V", false);
+			m.visitJumpInsn(Opcodes.GOTO, end);
+		}
+		{ // nextIsEcjSuppress
+			m.visitVarInsn(Opcodes.ASTORE, 2);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			final Label suppressStart = new Label();
+			m.visitJumpInsn(Opcodes.IFNONNULL, suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitVarInsn(Opcodes.ASTORE, 1);
+			final Label suppressEnd = new Label();
+			m.visitJumpInsn(Opcodes.GOTO, suppressEnd);
+			m.visitLabel(suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitJumpInsn(Opcodes.IF_ACMPEQ, suppressEnd);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Throwable",
+					"addSuppressed", "(Ljava/lang/Throwable;)V", false);
+			m.visitLabel(suppressEnd);
+		}
+		{ // nextIsEcjCloseAndThrow("r2")
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			final Label l18 = new Label();
+			m.visitJumpInsn(Opcodes.IFNULL, l18);
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun2$Resource", "close",
+					"()V", false);
+			m.visitLabel(l18);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitInsn(Opcodes.ATHROW);
+		}
+		{ // nextIsEcjSuppress
+			m.visitVarInsn(Opcodes.ASTORE, 2);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			final Label suppressStart = new Label();
+			m.visitJumpInsn(Opcodes.IFNONNULL, suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitVarInsn(Opcodes.ASTORE, 1);
+			final Label suppressEnd = new Label();
+			m.visitJumpInsn(Opcodes.GOTO, suppressEnd);
+			m.visitLabel(suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitJumpInsn(Opcodes.IF_ACMPEQ, suppressEnd);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Throwable",
+					"addSuppressed", "(Ljava/lang/Throwable;)V", false);
+			m.visitLabel(suppressEnd);
+		}
 		// throw primaryExc
 		m.visitVarInsn(Opcodes.ALOAD, 1);
 		m.visitInsn(Opcodes.ATHROW);
@@ -350,13 +451,12 @@ public class TryWithResourcesMatcherTest {
 		m.visitInsn(Opcodes.NOP);
 
 		m.visitLabel(end);
-		m.visitInsn(Opcodes.RETURN);
 
-		assertMatch(7, 35);
+		assertMatch(4, 86);
 	}
 
 	@Test
-	public void ecj_two_resources() {
+	public void ecj_noFlowOut() {
 		// primaryExc = null
 		m.visitInsn(Opcodes.ACONST_NULL);
 		m.visitVarInsn(Opcodes.ASTORE, 1);
@@ -364,150 +464,137 @@ public class TryWithResourcesMatcherTest {
 		m.visitInsn(Opcodes.ACONST_NULL);
 		m.visitVarInsn(Opcodes.ASTORE, 2);
 
-		// try { // 1
-		// r1 = open();
-
-		// try { // 2
-		// r2 = open();
-
-		// try { // 3
-		// body();
-		m.visitInsn(Opcodes.NOP);
-		// } // 3
-
-		Label next = genClose(null, 2);
-		// catch (Throwable t) // 3
-		// primaryExc = t
-		m.visitVarInsn(Opcodes.ASTORE, 1);
-		genCloseAndThrow(2);
-
-		// } // 2
-		next = genClose(next, 1);
-		// catch (Throwable t) // 2
-		genSuppress();
-		genCloseAndThrow(1);
-
-		// } // 1
-		// catch (Throwable t) // 1
-		genSuppress();
-
-		// throw primaryExc
-		m.visitVarInsn(Opcodes.ALOAD, 1);
-		m.visitInsn(Opcodes.ATHROW);
-		m.visitLabel(next);
-		m.visitInsn(Opcodes.RETURN);
-
-		assertMatch(5, 60);
-	}
-
-	@Test
-	public void ecj_three_resources() {
-		// primaryExc = null
-		m.visitInsn(Opcodes.ACONST_NULL);
-		m.visitVarInsn(Opcodes.ASTORE, 1);
-		// suppressedExc = null
-		m.visitInsn(Opcodes.ACONST_NULL);
-		m.visitVarInsn(Opcodes.ASTORE, 2);
-
-		// try { // 1
-		// r1 = open();
-
-		// try { // 2
-		// r2 = open();
-
-		// try { // 3
-		// r3 = open();
-
-		// try { // 4
-		// body();
-		m.visitInsn(Opcodes.NOP);
-		// } // 4
-
-		Label next;
-		next = genClose(null, 3);
-		// catch (Throwable t) // 4
-		// primaryExc = t
-		m.visitVarInsn(Opcodes.ASTORE, 1);
-		genCloseAndThrow(3);
-
-		// } // 3
-		next = genClose(next, 2);
-		// catch (Throwable t) // 3
-		genSuppress();
-		genCloseAndThrow(2);
-
-		// } // 2
-		next = genClose(next, 1);
-		// catch (Throwable t) // 2
-		genSuppress();
-		genCloseAndThrow(1);
-
-		// } // 1
-		// catch (Throwable t) // 1
-		genSuppress();
-
-		// throw primaryExc
-		m.visitVarInsn(Opcodes.ALOAD, 1);
-		m.visitInsn(Opcodes.ATHROW);
-		m.visitLabel(next);
-		m.visitInsn(Opcodes.RETURN);
-
-		assertMatch(5, 87);
-	}
-
-	private Label genClose(final Label label, final int r) {
-		if (label != null) {
+		{ // nextIsEcjClose("r0")
+			final Label label = new Label();
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			m.visitJumpInsn(Opcodes.IFNULL, label);
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun$Resource", "close",
+					"()V", false);
 			m.visitLabel(label);
 		}
-		Label next = new Label();
-		// if (r == null)
-		m.visitVarInsn(Opcodes.ALOAD, r + 2);
-		m.visitJumpInsn(Opcodes.IFNULL, next);
-		// r.close()
-		m.visitVarInsn(Opcodes.ALOAD, r + 2);
-		m.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/io/Closeable " + r,
-				"close", "()V", false);
-		m.visitJumpInsn(Opcodes.GOTO, next);
-		return next;
-	}
+		{ // nextIsEcjClose("r1")
+			final Label label = new Label();
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			m.visitJumpInsn(Opcodes.IFNULL, label);
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun$Resource", "close",
+					"()V", false);
+			m.visitLabel(label);
+		}
+		{ // nextIsEcjClose("r2")
+			final Label label = new Label();
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			m.visitJumpInsn(Opcodes.IFNULL, label);
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun$Resource", "close",
+					"()V", false);
+			m.visitLabel(label);
+		}
 
-	private void genCloseAndThrow(final int r) {
-		// if (r == null)
-		m.visitVarInsn(Opcodes.ALOAD, r + 2);
-		final Label throwLabel = new Label();
-		m.visitJumpInsn(Opcodes.IFNULL, throwLabel);
-		// r.close()
-		m.visitVarInsn(Opcodes.ALOAD, r + 2);
-		m.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/io/Closeable " + r,
-				"close", "()V", false);
-		m.visitLabel(throwLabel);
+		m.visitInsn(Opcodes.ARETURN);
+
+		// FIXME finally block
+		m.visitVarInsn(Opcodes.ASTORE, 1);
+
+		{ // nextIsEcjCloseAndThrow("r0")
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			final Label throwLabel = new Label();
+			m.visitJumpInsn(Opcodes.IFNULL, throwLabel);
+			m.visitVarInsn(Opcodes.ALOAD, 5);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun$Resource", "close",
+					"()V", false);
+			m.visitLabel(throwLabel);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitInsn(Opcodes.ATHROW);
+		}
+		{ // nextIsEcjSuppress
+			m.visitVarInsn(Opcodes.ASTORE, 2);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			final Label suppressStart = new Label();
+			m.visitJumpInsn(Opcodes.IFNONNULL, suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitVarInsn(Opcodes.ASTORE, 1);
+			final Label suppressEnd = new Label();
+			m.visitJumpInsn(Opcodes.GOTO, suppressEnd);
+			m.visitLabel(suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitJumpInsn(Opcodes.IF_ACMPEQ, suppressEnd);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Throwable",
+					"addSuppressed", "(Ljava/lang/Throwable;)V", false);
+			m.visitLabel(suppressEnd);
+		}
+		{ // nextIsEcjCloseAndThrow("r1")
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			final Label throwLabel = new Label();
+			m.visitJumpInsn(Opcodes.IFNULL, throwLabel);
+			m.visitVarInsn(Opcodes.ALOAD, 4);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun$Resource", "close",
+					"()V", false);
+			m.visitLabel(throwLabel);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitInsn(Opcodes.ATHROW);
+		}
+		{ // nextIsEcjSuppress
+			m.visitVarInsn(Opcodes.ASTORE, 2);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			final Label suppressStart = new Label();
+			m.visitJumpInsn(Opcodes.IFNONNULL, suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitVarInsn(Opcodes.ASTORE, 1);
+			final Label suppressEnd = new Label();
+			m.visitJumpInsn(Opcodes.GOTO, suppressEnd);
+			m.visitLabel(suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitJumpInsn(Opcodes.IF_ACMPEQ, suppressEnd);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Throwable",
+					"addSuppressed", "(Ljava/lang/Throwable;)V", false);
+			m.visitLabel(suppressEnd);
+		}
+		{ // nextIsEcjCloseAndThrow("r2")
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			final Label throwLabel = new Label();
+			m.visitJumpInsn(Opcodes.IFNULL, throwLabel);
+			m.visitVarInsn(Opcodes.ALOAD, 3);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "Fun$Resource", "close",
+					"()V", false);
+			m.visitLabel(throwLabel);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitInsn(Opcodes.ATHROW);
+		}
+		{ // nextIsEcjSuppress
+			m.visitVarInsn(Opcodes.ASTORE, 2);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			final Label suppressStart = new Label();
+			m.visitJumpInsn(Opcodes.IFNONNULL, suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitVarInsn(Opcodes.ASTORE, 1);
+			final Label suppressEnd = new Label();
+			m.visitJumpInsn(Opcodes.GOTO, suppressEnd);
+			m.visitLabel(suppressStart);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitJumpInsn(Opcodes.IF_ACMPEQ, suppressEnd);
+			m.visitVarInsn(Opcodes.ALOAD, 1);
+			m.visitVarInsn(Opcodes.ALOAD, 2);
+			m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Throwable",
+					"addSuppressed", "(Ljava/lang/Throwable;)V", false);
+			m.visitLabel(suppressEnd);
+		}
+		// throw primaryExc
 		m.visitVarInsn(Opcodes.ALOAD, 1);
 		m.visitInsn(Opcodes.ATHROW);
-	}
 
-	private void genSuppress() {
-		// suppressedExc = t
-		m.visitVarInsn(Opcodes.ASTORE, 2);
-		// if (primaryExc != null)
-		m.visitVarInsn(Opcodes.ALOAD, 1);
-		final Label suppressStart = new Label();
-		m.visitJumpInsn(Opcodes.IFNONNULL, suppressStart);
-		// primaryExc = suppressedExc
-		m.visitVarInsn(Opcodes.ALOAD, 2);
-		m.visitVarInsn(Opcodes.ASTORE, 1);
-		final Label suppressEnd = new Label();
-		m.visitJumpInsn(Opcodes.GOTO, suppressEnd);
-		// if (primaryExc != suppressedExc)
-		m.visitLabel(suppressStart);
-		m.visitVarInsn(Opcodes.ALOAD, 1);
-		m.visitVarInsn(Opcodes.ALOAD, 2);
-		m.visitJumpInsn(Opcodes.IF_ACMPEQ, suppressEnd);
-		// primaryExc.addSuppressed(suppressedExc)
-		m.visitVarInsn(Opcodes.ALOAD, 1);
-		m.visitVarInsn(Opcodes.ALOAD, 2);
-		m.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Throwable",
-				"addSuppressed", "(Ljava/lang/Throwable;)V", false);
-		m.visitLabel(suppressEnd);
+		// additional handlers
+		m.visitInsn(Opcodes.NOP);
+
+		assertMatch(4, 85);
 	}
 
 	private void assertMatch(final int start, final int end) {
