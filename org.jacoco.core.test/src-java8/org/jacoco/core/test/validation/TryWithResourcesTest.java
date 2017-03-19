@@ -59,7 +59,7 @@ public class TryWithResourcesTest extends ValidationTestBase {
 		assertLine("two.body", ICounter.FULLY_COVERED);
 		// without filter next line has branches:
 		assertLine("two.close", ICounter.EMPTY);
-		assertLine("three.after", ICounter.FULLY_COVERED);
+		assertLine("two.after", ICounter.FULLY_COVERED);
 	}
 
 	/**
