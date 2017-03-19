@@ -12,7 +12,9 @@
 package org.jacoco.core.internal.analysis;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jacoco.core.analysis.ICounter;
 import org.jacoco.core.analysis.IMethodCoverage;
@@ -23,12 +25,17 @@ import org.jacoco.core.internal.flow.LabelInfo;
 import org.jacoco.core.internal.flow.MethodProbesVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 
 /**
  * A {@link MethodProbesVisitor} that analyzes which statements and branches of
  * a method have been executed based on given probe data.
  */
-public class MethodAnalyzer extends MethodProbesVisitor {
+public class MethodAnalyzer extends MethodProbesVisitor
+		implements Filters.IOutput {
 
 	private final boolean[] probes;
 
@@ -86,6 +93,33 @@ public class MethodAnalyzer extends MethodProbesVisitor {
 		return coverage;
 	}
 
+	/**
+	 * {@link MethodNode#accept(MethodVisitor)}
+	 */
+	@Override
+	public void accept(final MethodNode methodNode,
+			final MethodVisitor methodVisitor) {
+		this.ignored.clear();
+		Filters.filter(methodNode, this);
+
+		for (TryCatchBlockNode n : methodNode.tryCatchBlocks) {
+			n.accept(methodVisitor);
+		}
+		for (int i = 0; i < methodNode.instructions.size(); i++) {
+			AbstractInsnNode instruction = methodNode.instructions.get(i);
+			currentNode = instruction;
+			instruction.accept(methodVisitor);
+		}
+		methodVisitor.visitEnd();
+	}
+
+	private Set<AbstractInsnNode> ignored = new HashSet<AbstractInsnNode>();
+	private AbstractInsnNode currentNode;
+
+	public void ignore(final AbstractInsnNode instruction) {
+		ignored.add(instruction);
+	}
+
 	@Override
 	public void visitLabel(final Label label) {
 		currentLabel.add(label);
@@ -107,6 +141,7 @@ public class MethodAnalyzer extends MethodProbesVisitor {
 
 	private void visitInsn() {
 		final Instruction insn = new Instruction(currentLine);
+		insn.node = currentNode;
 		instructions.add(insn);
 		if (lastInsn != null) {
 			insn.setPredecessor(lastInsn);
@@ -272,6 +307,10 @@ public class MethodAnalyzer extends MethodProbesVisitor {
 		// Report result:
 		coverage.ensureCapacity(firstLine, lastLine);
 		for (final Instruction i : instructions) {
+			if (ignored.contains(i.node)) {
+				continue;
+			}
+
 			final int total = i.getBranches();
 			final int covered = i.getCoveredBranches();
 			final ICounter instrCounter = covered == 0 ? CounterImpl.COUNTER_1_0
