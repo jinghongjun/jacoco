@@ -346,10 +346,13 @@ public class TryWithResourcesMatcherTest {
 		m.visitVarInsn(Opcodes.ALOAD, 1);
 		m.visitInsn(Opcodes.ATHROW);
 
+		// additional handlers
+		m.visitInsn(Opcodes.NOP);
+
 		m.visitLabel(end);
 		m.visitInsn(Opcodes.RETURN);
 
-		assertMatch(7, 36);
+		assertMatch(7, 35);
 	}
 
 	@Test
@@ -394,7 +397,7 @@ public class TryWithResourcesMatcherTest {
 		m.visitLabel(next);
 		m.visitInsn(Opcodes.RETURN);
 
-		assertMatch(5, 61);
+		assertMatch(5, 60);
 	}
 
 	@Test
@@ -449,7 +452,7 @@ public class TryWithResourcesMatcherTest {
 		m.visitLabel(next);
 		m.visitInsn(Opcodes.RETURN);
 
-		assertMatch(5, 88);
+		assertMatch(5, 87);
 	}
 
 	private Label genClose(final Label label, final int r) {

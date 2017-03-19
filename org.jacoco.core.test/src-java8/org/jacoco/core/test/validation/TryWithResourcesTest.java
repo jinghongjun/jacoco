@@ -11,13 +11,13 @@
  *******************************************************************************/
 package org.jacoco.core.test.validation;
 
+import java.io.IOException;
+
 import org.jacoco.core.analysis.ICounter;
 import org.jacoco.core.internal.Java9Support;
 import org.jacoco.core.test.TargetLoader;
 import org.jacoco.core.test.validation.targets.TryWithResources;
 import org.junit.Test;
-
-import java.io.IOException;
 
 /**
  * Test of filtering of a bytecode that is generated for a try-with-resources
@@ -93,6 +93,7 @@ public class TryWithResourcesTest extends ValidationTestBase {
 		assertLine("extended.close", ICounter.EMPTY);
 		assertLine("extended.catch", ICounter.NOT_COVERED);
 		assertLine("extended.catchBlock", ICounter.NOT_COVERED);
+		// TODO empty with ECJ
 		assertLine("extended.catchBlockEnd", ICounter.FULLY_COVERED);
 		assertLine("extended.after", ICounter.FULLY_COVERED);
 	}
@@ -104,6 +105,7 @@ public class TryWithResourcesTest extends ValidationTestBase {
 	public void returnInBody() {
 		assertLine("returnInBody.try", ICounter.FULLY_COVERED);
 		assertLine("returnInBody.open", ICounter.FULLY_COVERED);
+		// FIXME ECJ
 		assertLine("returnInBody.close", ICounter.EMPTY);
 		assertLine("returnInBody.return", ICounter.FULLY_COVERED);
 	}
@@ -113,6 +115,7 @@ public class TryWithResourcesTest extends ValidationTestBase {
 	 */
 	@Test
 	public void handwritten() {
+		// TODO ECJ
 		assertLine("handwritten", ICounter.EMPTY);
 	}
 
@@ -129,6 +132,7 @@ public class TryWithResourcesTest extends ValidationTestBase {
 		if (java9) {
 			assertLine("empty.close", ICounter.FULLY_COVERED, 0, 0);
 		} else {
+			// TODO ecj
 			assertLine("empty.close", ICounter.PARTLY_COVERED, 2, 2);
 		}
 	}
@@ -141,6 +145,7 @@ public class TryWithResourcesTest extends ValidationTestBase {
 		final boolean java9 = Java9Support.isPatchRequired(
 				TargetLoader.getClassDataAsBytes(TryWithResources.class));
 
+		// TODO ecj
 		assertLine("throwInBody", ICounter.NOT_COVERED, java9 ? 0 : 4, 0);
 		assertLine("throwInBody.throw", ICounter.NOT_COVERED);
 	}

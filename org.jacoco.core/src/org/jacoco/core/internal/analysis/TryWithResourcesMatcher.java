@@ -11,15 +11,15 @@
  *******************************************************************************/
 package org.jacoco.core.internal.analysis;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
-
-import java.util.HashMap;
-import java.util.Map;
 
 final class TryWithResourcesMatcher {
 
@@ -175,8 +175,11 @@ final class TryWithResourcesMatcher {
 	}
 
 	private boolean matchEcj() {
-		// TODO goto only in case, if execution not terminated in the body
 		if (!nextIsEcjClose("r0")) {
+			return false;
+		}
+		// TODO goto only in case, if execution not terminated in the body
+		if (!nextIsJump(Opcodes.GOTO, "r0.end")) {
 			return false;
 		}
 		// "catch (Throwable t)"
@@ -201,6 +204,9 @@ final class TryWithResourcesMatcher {
 			if (!nextIsEcjClose(r)) {
 				return false;
 			}
+			if (!nextIsJump(Opcodes.GOTO, r + ".end")) {
+				return false;
+			}
 			if (!nextIsEcjSuppress(r)) {
 				return false;
 			}
@@ -211,7 +217,8 @@ final class TryWithResourcesMatcher {
 		}
 		// "throw primaryExc"
 		return nextIsVar(Opcodes.ALOAD, PRIMARY_EXC) && nextIs(Opcodes.ATHROW)
-				&& nextIsLabel("r" + i + ".end");
+		// && nextIsLabel("r" + i + ".end")
+		;
 	}
 
 	private boolean nextIsEcjClose(final String name) {
@@ -219,7 +226,7 @@ final class TryWithResourcesMatcher {
 				// "if (r != null)"
 				&& nextIsJump(Opcodes.IFNULL, name + ".end")
 				// "r.close()"
-				&& nextIsClose(name) && nextIsJump(Opcodes.GOTO, name + ".end");
+				&& nextIsClose(name);
 	}
 
 	private boolean nextIsEcjCloseAndThrow(final String name) {

@@ -11,10 +11,10 @@
  *******************************************************************************/
 package org.jacoco.core.test.validation.targets;
 
+import static org.jacoco.core.test.validation.targets.Stubs.nop;
+
 import java.io.Closeable;
 import java.io.IOException;
-
-import static org.jacoco.core.test.validation.targets.Stubs.nop;
 
 /**
  * This test target is a try-with-resources statement (Java 7).
