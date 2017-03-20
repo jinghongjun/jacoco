@@ -48,7 +48,7 @@ final class TryWithResourcesMatcher {
 		if (start.getPrevious() == null) {
 			return null;
 		}
-		for (Pattern t : Pattern.values()) {
+		for (final Pattern t : Pattern.values()) {
 			cursor = start.getPrevious();
 			vars.clear();
 			labels.clear();
@@ -63,7 +63,7 @@ final class TryWithResourcesMatcher {
 	private static final String PRIMARY_EXC = "primaryExc";
 	private static final String SUPPRESSED_EXC = "suppressedExc";
 
-	private boolean matches(Pattern pattern) {
+	private boolean matches(final Pattern pattern) {
 		switch (pattern) {
 		case ECJ:
 			return matchEcj();
@@ -110,7 +110,7 @@ final class TryWithResourcesMatcher {
 				|| nextIsLabel("normal.finallyExit");
 	}
 
-	private boolean nextIsFinally(Pattern pattern, String ctx) {
+	private boolean nextIsFinally(final Pattern pattern, final String ctx) {
 		switch (pattern) {
 		case JAVAC_FULL:
 			return nextIs(Opcodes.ALOAD)
@@ -274,7 +274,7 @@ final class TryWithResourcesMatcher {
 				&& nextIs(Opcodes.ALOAD) && nextIs(Opcodes.ATHROW);
 	}
 
-	private boolean nextIsEcjSuppress(String name) {
+	private boolean nextIsEcjSuppress(final String name) {
 		return nextIsVar(Opcodes.ASTORE, name + ".t")
 				// "suppressedExc = t"
 				// "if (primaryExc != null)"
@@ -296,7 +296,7 @@ final class TryWithResourcesMatcher {
 
 	private final Map<String, String> owner = new HashMap<String, String>();
 
-	private boolean nextIsClose(String name) {
+	private boolean nextIsClose(final String name) {
 		if (!nextIsVar(Opcodes.ALOAD, name)) {
 			return false;
 		}
@@ -314,7 +314,7 @@ final class TryWithResourcesMatcher {
 		return expected == null || actual.equals(expected);
 	}
 
-	private boolean nextIsAddSuppressed(String name) {
+	private boolean nextIsAddSuppressed(final String name) {
 		if (!nextIsVar(Opcodes.ALOAD, PRIMARY_EXC)) {
 			return false;
 		}
@@ -331,7 +331,7 @@ final class TryWithResourcesMatcher {
 
 	private final Map<String, Integer> vars = new HashMap<String, Integer>();
 
-	private boolean nextIsVar(int opcode, String name) {
+	private boolean nextIsVar(final int opcode, final String name) {
 		if (!nextIs(opcode)) {
 			return false;
 		}
@@ -342,7 +342,7 @@ final class TryWithResourcesMatcher {
 
 	private final Map<String, LabelNode> labels = new HashMap<String, LabelNode>();
 
-	private boolean nextIsJump(int opcode, String name) {
+	private boolean nextIsJump(final int opcode, final String name) {
 		if (!nextIs(opcode)) {
 			return false;
 		}
@@ -351,7 +351,7 @@ final class TryWithResourcesMatcher {
 		return expected == null || actual == expected;
 	}
 
-	private boolean nextIsLabel(String name) {
+	private boolean nextIsLabel(final String name) {
 		cursor = cursor.getNext();
 		if (cursor.getType() != AbstractInsnNode.LABEL) {
 			return false;
@@ -365,7 +365,7 @@ final class TryWithResourcesMatcher {
 	 * Moves {@link #cursor} to next instruction and returns <code>true</code>
 	 * if it has given opcode.
 	 */
-	private boolean nextIs(int opcode) {
+	private boolean nextIs(final int opcode) {
 		next();
 		return cursor != null && cursor.getOpcode() == opcode;
 	}
